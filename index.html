@@ -445,28 +445,37 @@ function showTab(tab) {
 function renderInventory() {
   var machine = document.getElementById('machine-select').value;
   var inv = data.machines[machine] || {};
-  var content = document.getElementById('content');
+  var el = document.getElementById('content');
+  var prodNames = Object.keys(inv);
 
-  if (!data.products.length) {
-    content.innerHTML = '<div class="empty"><div class="empty-icon">📦</div><h3>Sin productos</h3><p>Sincroniza con Awish para cargar el inventario.</p></div>';
+  if (!prodNames.length) {
+    el.innerHTML = '<div class=\"empty\"><div class=\"empty-icon\">📦</div><h3>Sin productos</h3><p>Sincroniza con Awish para cargar el inventario.</p></div>';
     return;
   }
 
-  var html = '<div class="inv-list">';
-  data.products.forEach(function(p) {
-    var stock = inv[p.name] !== undefined ? inv[p.name] : '—';
-    var mini  = p.min_stock || 3;
-    var cls   = stock === 0 ? 'out' : (stock !== '—' && stock <= mini ? 'low' : 'ok');
+  var rows = '';
+  prodNames.sort().forEach(function(prodName) {
+    var stock = inv[prodName];
+    var mini = 3;
+    var found = data.products.find(function(x) { return x.name === prodName; });
+    if (found) mini = found.min_stock || 3;
+    var cls = stock === 0 ? 'out' : (stock <= mini ? 'low' : 'ok');
     var label = cls === 'out' ? 'AGOTADO' : (cls === 'low' ? 'BAJO' : 'OK');
-    html += '<div class="inv-card ' + cls + '" onclick="openEdit(\'' + esc(machine) + '\',\'' + esc(p.name) + '\',' + (stock === '—' ? 0 : stock) + ')">';
-    html += '<div class="status-dot ' + cls + '"></div>';
-    html += '<div class="inv-info"><div class="inv-name">' + p.name + '</div><div class="inv-meta">Mín: ' + mini + ' · ' + label + '</div></div>';
-    html += '<div class="inv-stock"><div class="stock-num ' + cls + '">' + stock + '</div><div class="stock-label">stock</div></div>';
-    html += '</div>';
+    rows += '<div class=\"inv-card ' + cls + '\" data-m=\"' + esc(machine) + '\" data-p=\"' + esc(prodName) + '\" data-s=\"' + stock + '\" onclick=\"editFromCard(this)\">';
+    rows += '<div class=\"status-dot ' + cls + '\"></div>';
+    rows += '<div class=\"inv-info\"><div class=\"inv-name\">' + prodName + '</div><div class=\"inv-meta\">Min: ' + mini + ' &middot; ' + label + '</div></div>';
+    rows += '<div class=\"inv-stock\"><div class=\"stock-num ' + cls + '\">' + stock + '</div><div class=\"stock-label\">stock</div></div>';
+    rows += '</div>';
   });
-  html += '</div>';
-  content.innerHTML = html;
+  el.innerHTML = '<div class=\"inv-list\">' + rows + '</div>';
   updateAlertStrip();
+}
+
+function editFromCard(el) {
+  var m = el.getAttribute('data-m');
+  var p = el.getAttribute('data-p');
+  var s = parseInt(el.getAttribute('data-s'));
+  openEdit(m, p, s);
 }
 
 // ── ALERTS ─────────────────────────────────────────────────────────────────
@@ -713,4 +722,3 @@ init();
 </script>
 </body>
 </html>
-
