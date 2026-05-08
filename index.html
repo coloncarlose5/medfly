@@ -401,6 +401,7 @@ var data = { machines: {}, products: [], history: [], last_sync: null };
 var currentTab = 'inv';
 var editMachine = null, editProduct = null, editStock = 0;
 var TOKEN = '';
+var VT_SESSION = localStorage.getItem('vt_session') || '';
 
 var DEFAULT_MACHINES = [
   'PUCPR Derecho','Católica Centro','Condado','Católica Cancha',
@@ -584,7 +585,16 @@ function renderSettings() {
 
     '<div class="settings-card">' +
     '<h3>🔄 Sincronización</h3>' +
-    '<button class="btn-full btn-green" onclick="doSync()">⚡ Sincronizar con Awish</button>' +
+    '<button class="btn-full btn-green" onclick="doSync()">⚡ Sincronizar Todo</button>' +
+    '</div>' +
+
+    '<div class="settings-card">' +
+    '<h3>🏷️ VendingTracker Session</h3>' +
+    '<div class="settings-label">PHPSESSID</div>' +
+    '<input type="password" class="token-input" id="vt-session-field" placeholder="Pega tu PHPSESSID de VendingTracker..." value="' + (VT_SESSION ? VT_SESSION.slice(0,15)+'...' : '') + '">' +
+    '<div style="font-size:11px;color:#888;margin-top:4px;">Se obtiene igual que el token de Awish — DevTools → Network → Cookie</div>' +
+    '<button class="btn-full btn-blue" onclick="saveVTSession()">💾 Guardar Session VT</button>' +
+    '<div style="font-size:11px;margin-top:6px;color:' + (VT_SESSION ? '#1A7A82' : '#C62828') + '">' + (VT_SESSION ? '✅ Session configurada' : '⚠️ Sin session') + '</div>' +
     '<button class="btn-full btn-orange" style="margin-top:8px" onclick="exportCSV()">📤 Exportar CSV</button>' +
     '</div>' +
 
@@ -627,6 +637,16 @@ function saveToken() {
   localStorage.setItem('awish_token', TOKEN);
   renderSettings();
   alert('Token guardado ✅');
+}
+
+function saveVTSession() {
+  var field = document.getElementById('vt-session-field');
+  var val = field ? field.value.trim() : '';
+  if (!val) { alert('Pega el PHPSESSID primero'); return; }
+  localStorage.setItem('vt_session', val);
+  VT_SESSION = val;
+  renderSettings();
+  alert('VendingTracker session guardada ✅');
 }
 
 // ── SYNC ───────────────────────────────────────────────────────────────────
@@ -688,6 +708,40 @@ async function doSync() {
         data.products.push({ name: prod, min_stock: 3 });
       }
     });
+
+    // Sync VendingTracker if session available
+    if (VT_SESSION) {
+      try {
+        badge.textContent = '⏳ VendingTracker...';
+        var vtResp = await fetch('https://beta.vendingtracker.com/Operating/Inventorycontrol/machineStockDetail', {
+          method: 'POST',
+          headers: {
+            'Cookie': 'think_var=en-us; PHPSESSID=' + VT_SESSION,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: 'machineId=38348&cdKey=17875064426001&nickName=Med-Fly%20Inter&aisleWarn=30',
+          credentials: 'include'
+        });
+        var vtData = await vtResp.json();
+        var vtItems = vtData.data || vtData.list || (Array.isArray(vtData) ? vtData : []);
+        var machName = 'Med-Fly Inter';
+        if (!data.machines[machName]) data.machines[machName] = {};
+        vtItems.forEach(function(item) {
+          var prod = item.ingredientName || item.productName || item.name || 'Producto';
+          var stockStr = item.stockQuantity || item.stock || '0/10';
+          var parts = String(stockStr).split('/');
+          var stock = parseInt(parts[0]) || 0;
+          var mini = parseInt(item.aisleWarn || 3);
+          data.machines[machName][prod] = stock;
+          if (!data.products.find(function(p) { return p.name === prod; })) {
+            data.products.push({ name: prod, min_stock: mini });
+          }
+        });
+      } catch(vtErr) {
+        console.log('VendingTracker sync error:', vtErr.message);
+      }
+    }
 
     data.last_sync = new Date().toISOString();
     saveLocal();
