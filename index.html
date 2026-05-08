@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Med-Fly">
+<meta name="theme-color" content="#1B5E20">
+<title>Med-Fly • Inventario</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --g1: #1B5E20;
+  --g2: #2E7D32;
+  --g3: #43A047;
+  --g4: #A5D6A7;
+  --g5: #E8F5E9;
+  --red: #C62828;
+  --yellow: #E65100;
+  --blue: #0D47A1;
+  --white: #FFFFFF;
+  --bg: #F0F4F1;
+  --card: #FFFFFF;
+  --border: #D4E8D5;
+  --text: #1A2E1C;
+  --muted: #5A7A5C;
+  --safe-top: env(safe-area-inset-top);
+  --safe-bot: env(safe-area-inset-bottom);
+}
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+/* ── HEADER ── */
+.header {
+  background: linear-gradient(135deg, var(--g1) 0%, var(--g2) 100%);
+  padding: calc(var(--safe-top) + 14px) 18px 14px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.header::after {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 120px; height: 120px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+}
+.header-top { display: flex; align-items: center; justify-content: space-between; }
+.header-logo { display: flex; align-items: center; gap: 10px; }
+.logo-badge {
+  width: 36px; height: 36px;
+  background: var(--g3);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800; font-size: 13px;
+  color: white; letter-spacing: -0.5px;
+}
+.header-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700; font-size: 17px;
+  color: white; letter-spacing: -0.3px;
+}
+.header-sub { font-size: 11px; color: var(--g4); font-weight: 400; }
+.sync-badge {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 20px;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--g4);
+  font-family: 'DM Mono', monospace;
+  cursor: pointer;
+}
+.sync-badge.syncing { color: #FFD54F; border-color: #FFD54F; }
+
+/* ── MACHINE SELECTOR ── */
+.machine-bar {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  display: flex; align-items: center; gap: 8px;
+  flex-shrink: 0;
+}
+.machine-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
+.machine-select {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px; font-weight: 500;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  -webkit-appearance: none;
+}
+
+/* ── ALERT STRIP ── */
+.alert-strip {
+  padding: 8px 16px;
+  font-size: 12px; font-weight: 500;
+  flex-shrink: 0;
+  transition: background .3s;
+}
+.alert-strip.ok   { background: #E8F5E9; color: var(--g1); }
+.alert-strip.warn { background: #FFF3E0; color: var(--yellow); }
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tab {
+  flex: 1; padding: 10px 4px;
+  font-size: 12px; font-weight: 600;
+  text-align: center;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .2s;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.tab.active { color: var(--g1); border-bottom-color: var(--g3); }
+.tab-icon { font-size: 16px; }
+
+/* ── CONTENT ── */
+.content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* ── INVENTORY LIST ── */
+.inv-list { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+
+.inv-card {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: transform .1s;
+  -webkit-user-select: none;
+}
+.inv-card:active { transform: scale(0.98); }
+.inv-card.out { border-left: 4px solid var(--red); background: #FFF8F8; }
+.inv-card.low { border-left: 4px solid #FF8F00; background: #FFFDF5; }
+.inv-card.ok  { border-left: 4px solid var(--g3); }
+
+.inv-info { flex: 1; min-width: 0; }
+.inv-name { font-size: 14px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inv-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.inv-stock {
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 52px;
+}
+.stock-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px; font-weight: 800;
+  line-height: 1;
+}
+.stock-num.out { color: var(--red); }
+.stock-num.low { color: #E65100; }
+.stock-num.ok  { color: var(--g2); }
+.stock-label { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-dot.out { background: var(--red); }
+.status-dot.low { background: #FF8F00; }
+.status-dot.ok  { background: var(--g3); }
+
+/* ── ALERTS PAGE ── */
+.alerts-list { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.alert-card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 12px 14px;
+  border-left: 3px solid;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.alert-card.out { border-color: var(--red); }
+.alert-card.low { border-color: #FF8F00; }
+.alert-machine { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+.alert-product { font-size: 14px; font-weight: 600; margin: 2px 0; }
+.alert-detail  { font-size: 12px; color: var(--muted); }
+
+/* ── SETTINGS PAGE ── */
+.settings-wrap { padding: 16px 12px; display: flex; flex-direction: column; gap: 12px; }
+.settings-card { background: var(--card); border-radius: 14px; padding: 16px; border: 1px solid var(--border); }
+.settings-card h3 { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--g1); }
+.settings-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .3px; }
+.token-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  -webkit-appearance: none;
+}
+.token-input:focus { border-color: var(--g3); }
+#token-status { font-size: 12px; font-weight: 600; margin-top: 8px; }
+.btn-full {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: opacity .15s, transform .1s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-full:active { transform: scale(0.97); opacity: .9; }
+.btn-green { background: var(--g1); color: white; }
+.btn-blue  { background: var(--blue); color: white; }
+.btn-orange { background: #E65100; color: white; }
+
+.info-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.info-row:last-child { border-bottom: none; }
+.info-key { color: var(--muted); }
+.info-val { font-weight: 600; }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  display: flex;
+  padding-bottom: var(--safe-bot);
+  flex-shrink: 0;
+}
+.nav-btn {
+  flex: 1; padding: 10px 4px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color .15s;
+  border: none; background: none;
+}
+.nav-btn.active { color: var(--g1); }
+.nav-icon { font-size: 20px; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-sheet {
+  background: var(--card);
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px calc(var(--safe-bot) + 24px);
+  width: 100%;
+  max-width: 480px;
+}
+.modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+.modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+.stock-editor {
+  display: flex; align-items: center; gap: 16px;
+  justify-content: center; margin: 20px 0;
+}
+.stock-editor button {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  font-size: 24px; font-weight: 700;
+  cursor: pointer; color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.stock-editor button:active { background: var(--g5); border-color: var(--g3); }
+.stock-num-big {
+  font-family: 'Syne', sans-serif;
+  font-size: 52px; font-weight: 800;
+  color: var(--g1); min-width: 80px;
+  text-align: center; line-height: 1;
+}
+.modal-btns { display: flex; gap: 10px; margin-top: 8px; }
+.modal-btns button { flex: 1; padding: 14px; border-radius: 12px; border: none; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; }
+.btn-save   { background: var(--g1); color: white; }
+.btn-cancel { background: var(--bg); color: var(--muted); }
+
+/* ── EMPTY STATE ── */
+.empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty h3 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.empty p { font-size: 14px; line-height: 1.5; }
+
+/* ── LOADING ── */
+.loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+.spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--g3); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div class="header-logo">
+      <div class="logo-badge">MF</div>
+      <div>
+        <div class="header-title">Med-Fly</div>
+        <div class="header-sub">Rxpress LLC</div>
+      </div>
+    </div>
+    <div class="sync-badge" id="sync-badge" onclick="doSync()">⚡ Sync</div>
+  </div>
+</div>
+
+<!-- MACHINE BAR (only on inventory tab) -->
+<div class="machine-bar" id="machine-bar">
+  <span class="machine-label">Máquina</span>
+  <select class="machine-select" id="machine-select" onchange="renderInventory()"></select>
+</div>
+
+<!-- ALERT STRIP -->
+<div class="alert-strip ok" id="alert-strip">Cargando...</div>
+
+<!-- CONTENT -->
+<div class="content" id="content">
+  <div class="loading"><div class="spinner"></div>Cargando inventario...</div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="nav-btn active" id="nav-inv" onclick="showTab('inv')">
+    <span class="nav-icon">📦</span>Inventario
+  </button>
+  <button class="nav-btn" id="nav-alerts" onclick="showTab('alerts')">
+    <span class="nav-icon">⚠️</span>Alertas
+  </button>
+  <button class="nav-btn" id="nav-settings" onclick="showTab('settings')">
+    <span class="nav-icon">⚙️</span>Config
+  </button>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-product-name">Producto</div>
+    <div class="modal-sub" id="modal-machine-name">Máquina</div>
+    <div class="stock-editor">
+      <button onclick="adjustStock(-1)">−</button>
+      <div class="stock-num-big" id="modal-stock-num">0</div>
+      <button onclick="adjustStock(1)">+</button>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-save" onclick="saveEdit()">Guardar</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+var data = { machines: {}, products: [], history: [], last_sync: null };
+var currentTab = 'inv';
+var editMachine = null, editProduct = null, editStock = 0;
+var TOKEN = '';
+
+var DEFAULT_MACHINES = [
+  'PUCPR Derecho','Católica Centro','Condado','Católica Cancha',
+  'Católica M','Holiday Inn M','Spark by Hilton','Católica W','Holiday Inn'
+];
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+function init() {
+  var saved = localStorage.getItem('medfly_data');
+  if (saved) { try { data = JSON.parse(saved); } catch(e) {} }
+  TOKEN = localStorage.getItem('awish_token') || '';
+
+  if (!Object.keys(data.machines).length) {
+    DEFAULT_MACHINES.forEach(function(m) { data.machines[m] = {}; });
+  }
+
+  populateMachines();
+  showTab('inv');
+  updateAlertStrip();
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+}
+
+// ── MACHINES ───────────────────────────────────────────────────────────────
+function populateMachines() {
+  var sel = document.getElementById('machine-select');
+  var machines = Object.keys(data.machines).sort();
+  sel.innerHTML = machines.map(function(m) {
+    return '<option value="' + m + '">' + m + '</option>';
+  }).join('');
+}
+
+// ── TABS ───────────────────────────────────────────────────────────────────
+function showTab(tab) {
+  currentTab = tab;
+  ['inv','alerts','settings'].forEach(function(t) {
+    document.getElementById('nav-' + t).classList.toggle('active', t === tab);
+  });
+  document.getElementById('machine-bar').style.display = tab === 'inv' ? 'flex' : 'none';
+  document.getElementById('alert-strip').style.display = tab === 'settings' ? 'none' : 'flex';
+
+  if (tab === 'inv') renderInventory();
+  else if (tab === 'alerts') renderAlerts();
+  else renderSettings();
+}
+
+// ── INVENTORY ──────────────────────────────────────────────────────────────
+function renderInventory() {
+  var machine = document.getElementById('machine-select').value;
+  var inv = data.machines[machine] || {};
+  var content = document.getElementById('content');
+
+  if (!data.products.length) {
+    content.innerHTML = '<div class="empty"><div class="empty-icon">📦</div><h3>Sin productos</h3><p>Sincroniza con Awish para cargar el inventario.</p></div>';
+    return;
+  }
+
+  var html = '<div class="inv-list">';
+  data.products.forEach(function(p) {
+    var stock = inv[p.name] !== undefined ? inv[p.name] : '—';
+    var mini  = p.min_stock || 3;
+    var cls   = stock === 0 ? 'out' : (stock !== '—' && stock <= mini ? 'low' : 'ok');
+    var label = cls === 'out' ? 'AGOTADO' : (cls === 'low' ? 'BAJO' : 'OK');
+    html += '<div class="inv-card ' + cls + '" onclick="openEdit(\'' + esc(machine) + '\',\'' + esc(p.name) + '\',' + (stock === '—' ? 0 : stock) + ')">';
+    html += '<div class="status-dot ' + cls + '"></div>';
+    html += '<div class="inv-info"><div class="inv-name">' + p.name + '</div><div class="inv-meta">Mín: ' + mini + ' · ' + label + '</div></div>';
+    html += '<div class="inv-stock"><div class="stock-num ' + cls + '">' + stock + '</div><div class="stock-label">stock</div></div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  content.innerHTML = html;
+  updateAlertStrip();
+}
+
+// ── ALERTS ─────────────────────────────────────────────────────────────────
+function getAllAlerts() {
+  var alerts = [];
+  Object.keys(data.machines).forEach(function(m) {
+    var inv = data.machines[m];
+    data.products.forEach(function(p) {
+      var s = inv[p.name];
+      if (s === undefined) return;
+      if (s === 0) alerts.push({machine:m, product:p.name, stock:s, min:p.min_stock||3, type:'out'});
+      else if (s <= (p.min_stock||3)) alerts.push({machine:m, product:p.name, stock:s, min:p.min_stock||3, type:'low'});
+    });
+  });
+  return alerts;
+}
+
+function renderAlerts() {
+  var alerts = getAllAlerts();
+  var content = document.getElementById('content');
+  if (!alerts.length) {
+    content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><h3>Sin alertas</h3><p>Todos los productos tienen stock suficiente.</p></div>';
+    return;
+  }
+  var html = '<div class="alerts-list">';
+  alerts.forEach(function(a) {
+    var label = a.type === 'out' ? '🔴 AGOTADO' : '🟡 BAJO — ' + a.stock + '/' + a.min;
+    html += '<div class="alert-card ' + a.type + '">';
+    html += '<div class="alert-machine">' + a.machine + '</div>';
+    html += '<div class="alert-product">' + a.product + '</div>';
+    html += '<div class="alert-detail">' + label + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  content.innerHTML = html;
+}
+
+function updateAlertStrip() {
+  var alerts = getAllAlerts();
+  var strip = document.getElementById('alert-strip');
+  if (alerts.length) {
+    strip.className = 'alert-strip warn';
+    strip.textContent = '⚠️ ' + alerts.length + ' alerta(s) en la red';
+  } else {
+    strip.className = 'alert-strip ok';
+    strip.textContent = '✅ Todo OK';
+  }
+}
+
+// ── SETTINGS ───────────────────────────────────────────────────────────────
+function renderSettings() {
+  var machines = Object.keys(data.machines).length;
+  var products = data.products.length;
+  var lastSync = data.last_sync ? new Date(data.last_sync).toLocaleString('es-PR') : 'Nunca';
+  var tokenStatus = getTokenStatus();
+
+  document.getElementById('content').innerHTML =
+    '<div class="settings-wrap">' +
+
+    '<div class="settings-card">' +
+    '<h3>🔑 Bearer Token</h3>' +
+    '<div class="settings-label">Token de Awish</div>' +
+    '<input type="password" class="token-input" id="token-field" placeholder="Pega tu Bearer Token..." value="' + (TOKEN ? TOKEN.slice(0,20)+'...' : '') + '">' +
+    '<div id="token-status" style="color:' + tokenStatus.color + '">' + tokenStatus.text + '</div>' +
+    '<button class="btn-full btn-blue" onclick="saveToken()">🔑 Guardar Token</button>' +
+    '</div>' +
+
+    '<div class="settings-card">' +
+    '<h3>🔄 Sincronización</h3>' +
+    '<button class="btn-full btn-green" onclick="doSync()">⚡ Sincronizar con Awish</button>' +
+    '<button class="btn-full btn-orange" style="margin-top:8px" onclick="exportCSV()">📤 Exportar CSV</button>' +
+    '</div>' +
+
+    '<div class="settings-card">' +
+    '<h3>📊 Estado</h3>' +
+    '<div class="info-row"><span class="info-key">Máquinas</span><span class="info-val">' + machines + '</span></div>' +
+    '<div class="info-row"><span class="info-key">Productos</span><span class="info-val">' + products + '</span></div>' +
+    '<div class="info-row"><span class="info-key">Último sync</span><span class="info-val" style="font-size:11px">' + lastSync + '</span></div>' +
+    '<div class="info-row"><span class="info-key">Token</span><span class="info-val" style="color:' + tokenStatus.color + '">' + tokenStatus.short + '</span></div>' +
+    '</div>' +
+
+    '<div class="settings-card" style="background:#F9FBF9">' +
+    '<h3>📱 Cómo instalar</h3>' +
+    '<p style="font-size:13px;color:var(--muted);line-height:1.6">1. Abre esta página en <strong>Safari</strong><br>2. Toca el botón <strong>Compartir ⬆️</strong><br>3. Selecciona <strong>"Agregar a pantalla de inicio"</strong><br>4. Toca <strong>Agregar</strong></p>' +
+    '</div>' +
+
+    '</div>';
+}
+
+function getTokenStatus() {
+  if (!TOKEN) return { text: 'Sin token configurado', short: 'Sin token', color: '#C62828' };
+  try {
+    var payload = JSON.parse(atob(TOKEN.split('.')[1]));
+    var exp = new Date(payload.exp * 1000);
+    var days = Math.floor((exp - Date.now()) / 86400000);
+    if (days < 0) return { text: 'Token expirado — ' + exp.toLocaleDateString('es-PR'), short: 'Expirado', color: '#C62828' };
+    if (days <= 3) return { text: 'Expira pronto: ' + exp.toLocaleDateString('es-PR') + ' (' + days + 'd)', short: days + 'd', color: '#E65100' };
+    return { text: 'Válido hasta ' + exp.toLocaleDateString('es-PR') + ' (' + days + 'd)', short: days + 'd ✅', color: '#1B5E20' };
+  } catch(e) { return { text: 'Token inválido', short: 'Inválido', color: '#C62828' }; }
+}
+
+function saveToken() {
+  var field = document.getElementById('token-field');
+  var val = field ? field.value.trim() : '';
+  if (!val || val.includes('...')) {
+    alert('Pega el token completo primero');
+    return;
+  }
+  TOKEN = val;
+  localStorage.setItem('awish_token', TOKEN);
+  renderSettings();
+  alert('Token guardado ✅');
+}
+
+// ── SYNC ───────────────────────────────────────────────────────────────────
+async function doSync() {
+  if (!TOKEN) {
+    alert('Primero configura el Bearer Token en ⚙️ Config');
+    showTab('settings');
+    return;
+  }
+  var badge = document.getElementById('sync-badge');
+  badge.textContent = '⏳ Sync...';
+  badge.classList.add('syncing');
+
+  try {
+    // Get machines
+    var mr = await fetch('https://s.awish.com.cn/sapi/machine?is_online=&page=1&limit=100', {
+      headers: { 'Authorization': 'Bearer ' + TOKEN, 'Accept': 'application/json' }
+    });
+    var mresp = await mr.json();
+    var machList = mresp.data || [];
+    var machMap = {};
+    machList.forEach(function(m) {
+      var no = String(m.machine_no || m.id);
+      var name = m.machine_name || m.name || ('Maquina-' + m.id);
+      machMap[no] = name;
+      if (!data.machines[name]) data.machines[name] = {};
+    });
+
+    // Get stockout data
+    var page = 1, allItems = [];
+    while (true) {
+      var r = await fetch('https://s.awish.com.cn/sapi/replenishment/outStock?page=' + page + '&type=&limit=100', {
+        headers: { 'Authorization': 'Bearer ' + TOKEN, 'Accept': 'application/json' }
+      });
+      var resp = await r.json();
+      var items = resp.data || [];
+      if (!items.length) break;
+      allItems = allItems.concat(items);
+      if (items.length < 100) break;
+      page++;
+    }
+
+    // Reset
+    Object.keys(data.machines).forEach(function(m) { data.machines[m] = {}; });
+    data.products = [];
+
+    allItems.forEach(function(item) {
+      var machNo   = String(item.machine_no || '');
+      var machName = item.machine_name || machMap[machNo] || machNo;
+      var prod     = item.goods_name || 'Producto';
+      var outCount = parseInt(item.out_goods_count || 0);
+      var outRate  = parseFloat((item.out_rate || '0%').replace('%','')) / 100;
+      var capacity = outRate > 0 ? Math.round(outCount / outRate) : 10;
+      var stock    = Math.max(0, capacity - outCount);
+
+      if (!data.machines[machName]) data.machines[machName] = {};
+      data.machines[machName][prod] = stock;
+      if (!data.products.find(function(p) { return p.name === prod; })) {
+        data.products.push({ name: prod, min_stock: 3 });
+      }
+    });
+
+    data.last_sync = new Date().toISOString();
+    saveLocal();
+    populateMachines();
+
+    var agotados = allItems.filter(function(i) { return parseInt(i.out_goods_count||0) > 0; }).length;
+    badge.textContent = '✅ ' + Object.keys(data.machines).length + ' máq';
+    badge.classList.remove('syncing');
+    updateAlertStrip();
+
+    if (currentTab === 'inv') renderInventory();
+    else if (currentTab === 'alerts') renderAlerts();
+    else renderSettings();
+
+    alert('✅ Sync completo\n' + Object.keys(data.machines).length + ' máquinas · ' + agotados + ' agotados');
+  } catch(e) {
+    badge.textContent = '❌ Error';
+    badge.classList.remove('syncing');
+    alert('Error: ' + e.message);
+  }
+}
+
+// ── EDIT ───────────────────────────────────────────────────────────────────
+function openEdit(machine, product, stock) {
+  editMachine = machine; editProduct = product; editStock = stock;
+  document.getElementById('modal-product-name').textContent = product;
+  document.getElementById('modal-machine-name').textContent = '📍 ' + machine;
+  document.getElementById('modal-stock-num').textContent = stock;
+  document.getElementById('modal').classList.add('open');
+}
+function adjustStock(delta) {
+  editStock = Math.max(0, editStock + delta);
+  document.getElementById('modal-stock-num').textContent = editStock;
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function saveEdit() {
+  if (!data.machines[editMachine]) data.machines[editMachine] = {};
+  var old = data.machines[editMachine][editProduct] || 0;
+  data.machines[editMachine][editProduct] = editStock;
+  data.history.push({ ts: new Date().toISOString(), machine: editMachine, product: editProduct, from: old, to: editStock, source: 'manual' });
+  saveLocal();
+  closeModal();
+  renderInventory();
+}
+
+// ── EXPORT ─────────────────────────────────────────────────────────────────
+function exportCSV() {
+  var machines = Object.keys(data.machines);
+  var csv = 'Producto,Minimo,' + machines.join(',') + '\n';
+  data.products.forEach(function(p) {
+    var row = [p.name, p.min_stock].concat(machines.map(function(m) { return data.machines[m][p.name] !== undefined ? data.machines[m][p.name] : ''; }));
+    csv += row.map(function(v) { return '"' + v + '"'; }).join(',') + '\n';
+  });
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'MedFly_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
+function saveLocal() { localStorage.setItem('medfly_data', JSON.stringify(data)); }
+function esc(s) { return String(s).replace(/'/g, "\\'"); }
+
+// ── CLOSE MODAL ON BACKDROP ────────────────────────────────────────────────
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+init();
+</script>
+</body>
+</html>
+
