@@ -10,6 +10,15 @@
 <title>Med-Fly • Inventario</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.svg">
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "e98b741b-c6c7-49f2-8bd5-fdee8b8711d4",
+    });
+  });
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
@@ -662,6 +671,19 @@ async function doSync() {
     else if (currentTab === 'alerts') renderAlerts();
     else renderSettings();
 
+    var agotadosList = allItems.filter(function(i) { return parseInt(i.out_goods_count||0) >= parseInt((i.out_goods_count||0) / (parseFloat((i.out_rate||'100%').replace('%',''))/100)); });
+    // Send notification if products at 0
+    var ceros = allItems.filter(function(i) { 
+      var out = parseInt(i.out_goods_count||0);
+      var rate = parseFloat((i.out_rate||'0%').replace('%',''))/100;
+      var cap = rate > 0 ? Math.round(out/rate) : 10;
+      return cap - out === 0;
+    });
+    if (ceros.length > 0 && window.OneSignal) {
+      try {
+        OneSignal.User.addTag('has_alerts', 'true');
+      } catch(e) {}
+    }
     alert('✅ Sync completo\n' + Object.keys(data.machines).length + ' máquinas · ' + agotados + ' agotados');
   } catch(e) {
     badge.textContent = '❌ Error';
