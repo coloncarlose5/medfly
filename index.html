@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Med-Fly">
-<meta name="theme-color" content="#1B5E20">
+<meta name="theme-color" content="#1A7A82">
 <title>Med-Fly • Inventario</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.svg">
@@ -17,20 +17,20 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 :root {
-  --g1: #1B5E20;
-  --g2: #2E7D32;
-  --g3: #43A047;
-  --g4: #A5D6A7;
-  --g5: #E8F5E9;
+  --g1: #1A7A82;
+  --g2: #2AABB5;
+  --g3: #35C5D0;
+  --g4: #A8E6EA;
+  --g5: #E0F7F8;
   --red: #C62828;
   --yellow: #E65100;
   --blue: #0D47A1;
   --white: #FFFFFF;
   --bg: #F0F4F1;
   --card: #FFFFFF;
-  --border: #D4E8D5;
+  --border: #B2E0E3;
   --text: #1A2E1C;
-  --muted: #5A7A5C;
+  --muted: #4A7A80;
   --safe-top: env(safe-area-inset-top);
   --safe-bot: env(safe-area-inset-bottom);
 }
@@ -48,7 +48,7 @@ body {
 
 /* ── HEADER ── */
 .header {
-  background: linear-gradient(135deg, var(--g1) 0%, var(--g2) 100%);
+  background: linear-gradient(135deg, #424548 0%, #1A7A82 100%);
   padding: calc(var(--safe-top) + 14px) 18px 14px;
   flex-shrink: 0;
   position: relative;
@@ -66,7 +66,7 @@ body {
 .header-logo { display: flex; align-items: center; gap: 10px; }
 .logo-badge {
   width: 36px; height: 36px;
-  background: var(--g3);
+  background: #2AABB5;
   border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   font-family: 'Syne', sans-serif;
@@ -190,7 +190,7 @@ body {
 }
 .status-dot.out { background: var(--red); }
 .status-dot.low { background: #FF8F00; }
-.status-dot.ok  { background: var(--g3); }
+.status-dot.ok  { background: #2AABB5; }
 
 /* ── ALERTS PAGE ── */
 .alerts-list { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
@@ -332,7 +332,7 @@ body {
 <div class="header">
   <div class="header-top">
     <div class="header-logo">
-      <div class="logo-badge">MF</div>
+      <div class="logo-badge" style="background:#2AABB5;overflow:hidden;padding:2px;"><img src="logo.jpg" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"></div>
       <div>
         <div class="header-title">Med-Fly</div>
         <div class="header-sub">Rxpress LLC</div>
