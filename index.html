@@ -63,7 +63,7 @@ body {
   border-radius: 50%;
 }
 .header-top { display: flex; align-items: center; justify-content: space-between; }
-.header-logo { display: flex; align-items: center; gap: 10px; }
+.header-logo { display: flex; flex-direction: column; align-items: center; flex: 1; }
 .logo-badge {
   width: 36px; height: 36px;
   background: #2AABB5;
@@ -73,6 +73,7 @@ body {
   font-weight: 800; font-size: 13px;
   color: white; letter-spacing: -0.5px;
 }
+.header-logo-img { height: 36px; object-fit: contain; margin-bottom: 2px; }
 .header-title {
   font-family: 'Syne', sans-serif;
   font-weight: 700; font-size: 17px;
@@ -331,12 +332,10 @@ body {
 <!-- HEADER -->
 <div class="header">
   <div class="header-top">
+    <div style="width:60px"></div>
     <div class="header-logo">
-      <div class="logo-badge" style="background:#424548;overflow:hidden;padding:0;border-radius:10px;"><img src="logo.jpg" style="width:100%;height:100%;object-fit:contain;padding:4px;"></div>
-      <div>
-        <div class="header-title">Med-Fly</div>
-        <div class="header-sub">Rxpress LLC</div>
-      </div>
+      <img src="logo.jpg" class="header-logo-img">
+      <div class="header-sub">Rxpress LLC</div>
     </div>
     <div class="sync-badge" id="sync-badge" onclick="doSync()">⚡ Sync</div>
   </div>
