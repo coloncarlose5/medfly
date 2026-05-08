@@ -501,15 +501,41 @@ function getAllAlerts() {
   return alerts;
 }
 
+var alertFilter = 'all';
+
 function renderAlerts() {
-  var alerts = getAllAlerts();
-  var content = document.getElementById('content');
-  if (!alerts.length) {
-    content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><h3>Sin alertas</h3><p>Todos los productos tienen stock suficiente.</p></div>';
+  var allAlerts = getAllAlerts();
+  var el = document.getElementById('content');
+
+  // Sort: agotados first, then bajos
+  allAlerts.sort(function(a, b) {
+    if (a.type === 'out' && b.type !== 'out') return -1;
+    if (a.type !== 'out' && b.type === 'out') return 1;
+    return a.machine.localeCompare(b.machine);
+  });
+
+  // Machine filter options
+  var machines = ['all'].concat(Object.keys(data.machines).sort());
+  var filterHtml = '<div style="padding:10px 12px;display:flex;gap:6px;flex-wrap:wrap;background:#F0F4F1;border-bottom:1px solid #D4E8D5;">';
+  machines.forEach(function(m) {
+    var label = m === 'all' ? 'Todas' : m;
+    var count = m === 'all' ? allAlerts.length : allAlerts.filter(function(a) { return a.machine === m; }).length;
+    if (m !== 'all' && count === 0) return;
+    var active = alertFilter === m ? 'background:#1A7A82;color:white;' : 'background:white;color:#1A7A82;border:1.5px solid #1A7A82;';
+    filterHtml += '<button onclick="setAlertFilter(\'' + esc(m) + '\')" style="' + active + 'padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #1A7A82;">' + label + ' (' + count + ')</button>';
+  });
+  filterHtml += '</div>';
+
+  // Filter alerts
+  var filtered = alertFilter === 'all' ? allAlerts : allAlerts.filter(function(a) { return a.machine === alertFilter; });
+
+  if (!filtered.length) {
+    el.innerHTML = filterHtml + '<div class="empty"><div class="empty-icon">✅</div><h3>Sin alertas</h3><p>Esta máquina tiene todo OK.</p></div>';
     return;
   }
-  var html = '<div class="alerts-list">';
-  alerts.forEach(function(a) {
+
+  var html = filterHtml + '<div class="alerts-list">';
+  filtered.forEach(function(a) {
     var label = a.type === 'out' ? '🔴 AGOTADO' : '🟡 BAJO — ' + a.stock + '/' + a.min;
     html += '<div class="alert-card ' + a.type + '">';
     html += '<div class="alert-machine">' + a.machine + '</div>';
@@ -518,7 +544,12 @@ function renderAlerts() {
     html += '</div>';
   });
   html += '</div>';
-  content.innerHTML = html;
+  el.innerHTML = html;
+}
+
+function setAlertFilter(machine) {
+  alertFilter = machine;
+  renderAlerts();
 }
 
 function updateAlertStrip() {
@@ -749,7 +780,25 @@ document.getElementById('modal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
 
+// Auto-sync every 6 hours
+function scheduleAutoSync() {
+  var SIX_HOURS = 6 * 60 * 60 * 1000;
+  var lastSync = data.last_sync ? new Date(data.last_sync).getTime() : 0;
+  var now = Date.now();
+  var timeSinceLast = now - lastSync;
+
+  if (timeSinceLast >= SIX_HOURS && TOKEN) {
+    console.log('Auto-sync: starting...');
+    doSync();
+  }
+
+  // Check again every 30 minutes
+  setTimeout(scheduleAutoSync, 30 * 60 * 1000);
+}
+
 init();
+// Start auto-sync scheduler after 5 seconds
+setTimeout(scheduleAutoSync, 5000);
 </script>
 </body>
 </html>
