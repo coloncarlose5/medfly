@@ -671,18 +671,28 @@ async function doSync() {
     else if (currentTab === 'alerts') renderAlerts();
     else renderSettings();
 
-    var agotadosList = allItems.filter(function(i) { return parseInt(i.out_goods_count||0) >= parseInt((i.out_goods_count||0) / (parseFloat((i.out_rate||'100%').replace('%',''))/100)); });
-    // Send notification if products at 0
-    var ceros = allItems.filter(function(i) { 
-      var out = parseInt(i.out_goods_count||0);
-      var rate = parseFloat((i.out_rate||'0%').replace('%',''))/100;
-      var cap = rate > 0 ? Math.round(out/rate) : 10;
-      return cap - out === 0;
+    // Find products at exactly 0 stock
+    var ceros = [];
+    Object.keys(data.machines).forEach(function(mach) {
+      var inv = data.machines[mach];
+      Object.keys(inv).forEach(function(prod) {
+        if (inv[prod] === 0) {
+          ceros.push({machine: mach, product: prod});
+        }
+      });
     });
-    if (ceros.length > 0 && window.OneSignal) {
-      try {
-        OneSignal.User.addTag('has_alerts', 'true');
-      } catch(e) {}
+
+    // Send push notification for each agotado product
+    if (ceros.length > 0) {
+      ceros.forEach(function(item) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('🔴 Producto Agotado — Med-Fly', {
+            body: item.product + ' en ' + item.machine + ' está a 0',
+            icon: 'Logo%20MedFly-02%20copy.png',
+            tag: item.machine + '-' + item.product
+          });
+        }
+      });
     }
     alert('✅ Sync completo\n' + Object.keys(data.machines).length + ' máquinas · ' + agotados + ' agotados');
   } catch(e) {
